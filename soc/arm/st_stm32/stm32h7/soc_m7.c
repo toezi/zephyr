@@ -96,7 +96,7 @@ static int stm32h7_init(void)
 #else
 	LL_PWR_ConfigSupply(LL_PWR_LDO_SUPPLY);
 #endif
-	LL_PWR_SetRegulVoltageScaling(LL_PWR_REGU_VOLTAGE_SCALE1);
+	LL_PWR_SetRegulVoltageScaling(LL_PWR_REGU_VOLTAGE_SCALE0);
 	while (LL_PWR_IsActiveFlag_VOS() == 0) {
 	}
 
