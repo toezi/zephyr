@@ -23,7 +23,7 @@ LOG_MODULE_REGISTER(memc_stm32, CONFIG_MEMC_LOG_LEVEL);
 
 struct memc_stm32_config {
 	uint32_t fmc;
-	struct stm32_pclken pclken;
+	struct stm32_pclken pclken[2];
 	const struct pinctrl_dev_config *pcfg;
 };
 
@@ -49,7 +49,26 @@ static int memc_stm32_init(const struct device *dev)
 		return -ENODEV;
 	}
 
-	r = clock_control_on(clk, (clock_control_subsys_t)&config->pclken);
+	uint32_t clock_mux = config->pclken[1].enr;
+	if(clock_mux != 0)
+	{
+		if (clock_mux == FMC_SEL(2) && !STM32_PLL2_ENABLED) {
+			LOG_ERR("STM32_PLL2_ENABLED device not ready");
+			return -ENODEV;
+		}
+		if (clock_mux == FMC_SEL(1) && !STM32_PLL_ENABLED) {
+			LOG_ERR("STM32_PLL_ENABLED device not ready");
+			return -ENODEV;
+		}
+		r = clock_control_configure(clk, (clock_control_subsys_t)&config->pclken[1],NULL);
+		if (r < 0) {
+			LOG_ERR("Could not initialize FMC clock (%d)", r);
+			return r;
+		}
+
+	}
+
+	r = clock_control_on(clk, (clock_control_subsys_t)&config->pclken[0]);
 	if (r < 0) {
 		LOG_ERR("Could not initialize FMC clock (%d)", r);
 		return r;
@@ -72,8 +91,10 @@ PINCTRL_DT_INST_DEFINE(0);
 
 static const struct memc_stm32_config config = {
 	.fmc = DT_INST_REG_ADDR(0),
-	.pclken = { .bus = DT_INST_CLOCKS_CELL(0, bus),
-		    .enr = DT_INST_CLOCKS_CELL(0, bits) },
+	.pclken[0] = { .bus = DT_INST_CLOCKS_CELL_BY_IDX(0,0, bus),
+		    .enr = DT_INST_CLOCKS_CELL_BY_IDX(0,0, bits) },
+	.pclken[1] = { .bus = DT_INST_CLOCKS_CELL_BY_IDX(0,1, bus),
+		    .enr = DT_INST_CLOCKS_CELL_BY_IDX(0,1,bits) },
 	.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(0),
 };
 
