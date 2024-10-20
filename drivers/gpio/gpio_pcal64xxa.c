@@ -240,7 +240,7 @@ static int pcal64xxa_process_input(const struct device *dev, gpio_port_value_t *
 		 * that transitioned to their configured target state (0 for
 		 * falling edges, 1 otherwise, hence the XOR operation below).
 		 */
-		fired_triggers |= ((input_port & int_sources) ^ falling_edge_triggers);
+		fired_triggers |= ((input_port ^ falling_edge_triggers)  & int_sources);
 
 		/* Give back semaphore before the callback to make the same
 		 * driver available again for the callback.
